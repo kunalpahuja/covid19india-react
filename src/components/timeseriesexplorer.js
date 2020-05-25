@@ -20,6 +20,7 @@ function TimeSeriesExplorer({
   states,
   anchor,
   setAnchor,
+  timelineIndex,
 }) {
   const {t} = useTranslation();
   // const breakpoint = useBreakpoint();
@@ -140,7 +141,7 @@ function TimeSeriesExplorer({
       </div>
 
       <TimeSeries
-        {...{timeseries, chartType, isUniform, isLog}}
+        {...{timeseries, chartType, isUniform, isLog, timelineIndex}}
         dates={Object.keys(timeseries).slice(-lastDaysCount)}
         stateCode={activeStateCode}
       />
@@ -182,6 +183,9 @@ function TimeSeriesExplorer({
 }
 
 const isEqual = (prevProps, currProps) => {
+  if (!equal(currProps.timeline, prevProps.activeStateCode)) {
+    return false;
+  }
   if (!equal(currProps.activeStateCode, prevProps.activeStateCode)) {
     return false;
   }

@@ -5,13 +5,20 @@ import * as d3 from 'd3';
 import equal from 'fast-deep-equal';
 import produce from 'immer';
 import React, {useEffect, useRef, useMemo} from 'react';
+import useTimeseries from './hooks/usetimeseries';
 
-function Minigraph({timeseries}) {
+function Minigraph({timeseries, timelineIndex}) {
   const refs = useRef([]);
 
+  const [statistics, rawDates, getStatistic] = useTimeseries(
+    timeseries,
+    'cumulative',
+    timelineIndex
+  );
+
   const dates = useMemo(() => {
-    return Object.keys(timeseries).slice(-20);
-  }, [timeseries]);
+    return rawDates.slice(-20);
+  }, [rawDates]);
 
   dates.forEach((date) => {
     timeseries = produce(timeseries, (draftTimeseries) => {
@@ -39,14 +46,10 @@ function Minigraph({timeseries}) {
       .domain([new Date(dates[0]), new Date(dates[T - 1])])
       .range([margin.left, chartRight]);
 
-    const dailyMin = d3.min(dates, (date) => timeseries[date].active);
-    const dailyMax = d3.max(dates, (date) =>
-      Math.max(
-        timeseries[date].confirmed,
-        timeseries[date].recovered,
-        timeseries[date].deceased
-      )
-    );
+    const dailyMin = d3.min(statistics.discrete.active);
+    const dailyMax = d3.max(statistics.discrete.confirmed);
+
+    console.log(dailyMax);
 
     const domainMinMax = Math.max(-dailyMin, dailyMax);
 
@@ -75,7 +78,9 @@ function Minigraph({timeseries}) {
                 d3
                   .line()
                   .x((date) => xScale(new Date(date)))
-                  .y((date) => yScale(timeseries[date][statistic]))
+                  .y((date) =>
+                    yScale(getStatistic(date, statistic, 'discrete'))
+                  )
                   .curve(d3.curveMonotoneX)
               )
               .attr('stroke-dasharray', function () {
@@ -101,7 +106,9 @@ function Minigraph({timeseries}) {
                 d3
                   .line()
                   .x((date) => xScale(new Date(date)))
-                  .y((date) => yScale(timeseries[date][statistic]))
+                  .y((date) =>
+                    yScale(getStatistic(date, statistic, 'discrete'))
+                  )
                   .curve(d3.curveMonotoneX)
               )
         );
@@ -116,7 +123,9 @@ function Minigraph({timeseries}) {
               .attr('fill', color)
               .attr('r', 2.5)
               .attr('cx', (date) => xScale(new Date(date)))
-              .attr('cy', (date) => yScale(timeseries[date][statistic]))
+              .attr('cy', (date) =>
+                yScale(getStatistic(date, statistic, 'discrete'))
+              )
               .style('opacity', 0)
               .call((enter) =>
                 enter
@@ -125,17 +134,21 @@ function Minigraph({timeseries}) {
                   .duration(500)
                   .style('opacity', 1)
                   .attr('cx', (date) => xScale(new Date(date)))
-                  .attr('cy', (date) => yScale(timeseries[date][statistic]))
+                  .attr('cy', (date) =>
+                    yScale(getStatistic(date, statistic, 'discrete'))
+                  )
               ),
           (update) =>
             update
               .transition()
               .duration(500)
               .attr('cx', (date) => xScale(new Date(date)))
-              .attr('cy', (date) => yScale(timeseries[date][statistic]))
+              .attr('cy', (date) =>
+                yScale(getStatistic(date, statistic, 'discrete'))
+              )
         );
     });
-  }, [dates, timeseries]);
+  }, [dates, timeseries, statistics, getStatistic]);
 
   return (
     <div className="Minigraph">
@@ -157,10 +170,10 @@ function Minigraph({timeseries}) {
 }
 
 const isEqual = (currProps, prevProps) => {
-  if (equal(currProps, prevProps)) {
-    return true;
+  if (!equal(currProps, prevProps)) {
+    return false;
   }
-  return false;
+  return true;
 };
 
 export default React.memo(Minigraph, isEqual);

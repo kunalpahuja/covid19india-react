@@ -14,7 +14,7 @@ import equal from 'fast-deep-equal';
 import React, {useState, useEffect, useRef} from 'react';
 import {useTranslation} from 'react-i18next';
 
-function TimeSeries({timeseries, chartType, isUniform, isLog}) {
+function TimeSeries({timeseries, chartType, isUniform, isLog, timelineIndex}) {
   const {t} = useTranslation();
   const refs = useRef([]);
 
@@ -23,7 +23,8 @@ function TimeSeries({timeseries, chartType, isUniform, isLog}) {
 
   const [statistics, dates, getDailyStatistic] = useTimeseries(
     timeseries,
-    chartType
+    chartType,
+    timelineIndex
   );
 
   const [highlightedDate, setHighlightedDate] = useState(
@@ -258,12 +259,10 @@ function TimeSeries({timeseries, chartType, isUniform, isLog}) {
             'd',
             d3
               .line()
-              .x((date) => {
-                xScale(new Date(date));
-              })
-              .y((date, index) => {
-                yScale(statistics[chartType][statistic][index]);
-              })
+              .x((date) => xScale(new Date(date)))
+              .y((date, index) =>
+                yScale(statistics[chartType][statistic][index])
+              )
               .curve(d3.curveMonotoneX)
           );
       } else {
@@ -340,6 +339,9 @@ function TimeSeries({timeseries, chartType, isUniform, isLog}) {
 }
 
 const isEqual = (prevProps, currProps) => {
+  if (!equal(currProps.timelineIndex, prevProps.timelineIndex)) {
+    return false;
+  }
   if (!equal(currProps.dates.length, prevProps.dates.length)) {
     return false;
   }

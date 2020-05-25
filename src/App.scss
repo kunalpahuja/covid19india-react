@@ -1693,13 +1693,17 @@ table {
 
       &:first-child {
         font-weight: 600;
-        max-width: 7.5rem !important;
+        width: 7.5rem !important;
         text-align: left;
         word-wrap: break-word !important;
       }
 
+      &:not(:first-child) {
+        width: 3rem !important;
+      }
+
       .delta {
-        display: inline-block;
+        display: block;
         font-size: 11px !important;
 
         &.is-confirmed {
@@ -4443,17 +4447,22 @@ footer {
 .timeline {
   position: fixed;
   right: 0;
+  top: 0;
   padding-right: .5rem;
   font-family: 'archia';
-  color: $gray-mid;
+  color: #ebebeb;
   overflow-y: scroll;
-  height: 10vh;
+  height: 100vh;
+  display: flex;
+  flex-direction: column-reverse;
+  transition: all 0.5s ease-in-out;
 
   .date {
+    text-align: right;
     cursor: pointer;
 
     &:hover {
-      color: $gray;
+      color: $gray-mid;
     }
   }
 }

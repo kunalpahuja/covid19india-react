@@ -16,6 +16,8 @@ import {
 import {utcToZonedTime} from 'date-fns-tz';
 import i18n from 'i18next';
 
+import axios from 'axios';
+
 export const isDevelopmentOrTest = () => {
   if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test')
     return true;
@@ -300,7 +302,7 @@ export const toTitleCase = (str) => {
   });
 };
 
-export const getStatistic = (data, type, statistic, per_million=false) => {
+export const getStatistic = (data, type, statistic, per_million = false) => {
   let count;
   if (statistic === 'active') {
     count = data[type].confirmed - data[type].recovered - data[type].deceased;
@@ -309,5 +311,7 @@ export const getStatistic = (data, type, statistic, per_million=false) => {
   } else {
     count = data[type][statistic];
   }
-  return per_million ? 1e6 * count / data.population : count;
-}
+  return per_million ? (1e6 * count) / data.population : count;
+};
+
+export const fetcher = (url) => axios(url).then((response) => response.data);

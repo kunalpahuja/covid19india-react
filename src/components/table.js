@@ -84,7 +84,12 @@ const FineprintBottom = React.memo(PureFineprintBottom, () => {
   return true;
 });
 
-function Table({data: original, regionHighlighted, setRegionHighlighted}) {
+function Table({
+  data: original,
+  regionHighlighted,
+  setRegionHighlighted,
+  timelineIndex,
+}) {
   const {t} = useTranslation();
 
   const [sortData, setSortData] = useLocalStorage('sortData', {
@@ -174,7 +179,12 @@ function Table({data: original, regionHighlighted, setRegionHighlighted}) {
                   <Row
                     key={stateCode}
                     data={data[stateCode]}
-                    {...{stateCode, regionHighlighted, setRegionHighlighted}}
+                    {...{
+                      stateCode,
+                      regionHighlighted,
+                      setRegionHighlighted,
+                      timelineIndex,
+                    }}
                   />
                 );
               }
@@ -187,7 +197,7 @@ function Table({data: original, regionHighlighted, setRegionHighlighted}) {
             key={'TT'}
             data={data['TT']}
             stateCode={'TT'}
-            {...{regionHighlighted, setRegionHighlighted}}
+            {...{regionHighlighted, setRegionHighlighted, timelineIndex}}
           />
         </tbody>
       </table>
@@ -215,6 +225,8 @@ const isEqual = (prevProps, currProps) => {
   } else if (
     !equal(prevProps.data['TT'].last_updated, currProps.data['TT'].last_updated)
   ) {
+    return false;
+  } else if (!equal(prevProps.timelineIndex, currProps.timelineIndex)) {
     return false;
   } else return true;
 };

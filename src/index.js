@@ -2,13 +2,16 @@ import './wdyr';
 import App from './App';
 import './i18n';
 import * as serviceWorker from './serviceWorker';
+import {StoreProvider} from './store';
 
 import React, {Suspense} from 'react';
 import ReactDOM from 'react-dom';
 
 ReactDOM.render(
   <Suspense fallback={''}>
-    <App />
+    <StoreProvider>
+      <App />
+    </StoreProvider>
   </Suspense>,
   document.getElementById('root')
 );

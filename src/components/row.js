@@ -1,5 +1,6 @@
 import {PRIMARY_STATISTICS, STATE_CODES} from '../constants';
 import {formatNumber, capitalize, abbreviate} from '../utils/commonfunctions';
+import useTimeseries from './hooks/usetimeseries';
 
 import Tooltip from '@primer/components/lib/Tooltip';
 import {
@@ -21,9 +22,24 @@ import {createBreakpoint, useLocalStorage} from 'react-use';
 
 const useBreakpoint = createBreakpoint({L: 768, S: 350});
 
-function PureCell({statistic, data}) {
-  const total = data.total[statistic];
-  const delta = data.delta[statistic];
+function PureCell({statistic, data, timelineIndex}) {
+  const [, dates, getDailyStatistic] = useTimeseries(
+    data.timeseries,
+    'cumulative',
+    timelineIndex
+  );
+
+  const total = getDailyStatistic(
+    dates[dates.length - 1],
+    statistic,
+    'cumulative'
+  );
+
+  const delta = getDailyStatistic(
+    dates[dates.length - 1],
+    statistic,
+    'discrete'
+  );
 
   const spring = useSpring({
     total: total || '-',
@@ -65,6 +81,9 @@ function PureCell({statistic, data}) {
 }
 
 const isCellEqual = (prevProps, currProps) => {
+  if (!equal(prevProps.timelineIndex, currProps.timelineIndex)) {
+    return false;
+  }
   if (!equal(prevProps.data.total, currProps.data.total)) {
     return false;
   }
@@ -179,7 +198,13 @@ const isDistrictRowEqual = (prevProps, currProps) => {
 };
 const DistrictRow = React.memo(PureDistrictRow, isDistrictRowEqual);
 
-function Row({stateCode, data, regionHighlighted, setRegionHighlighted}) {
+function Row({
+  stateCode,
+  data,
+  regionHighlighted,
+  setRegionHighlighted,
+  timelineIndex,
+}) {
   const [showDistricts, setShowDistricts] = useState(false);
   const [sortData, setSortData] = useLocalStorage('districtSortData', {
     sortColumn: 'confirmed',
@@ -284,7 +309,7 @@ function Row({stateCode, data, regionHighlighted, setRegionHighlighted}) {
         </td>
 
         {PRIMARY_STATISTICS.map((statistic) => (
-          <Cell key={statistic} {...{data, statistic}} />
+          <Cell key={statistic} {...{data, statistic, timelineIndex}} />
         ))}
       </tr>
 
@@ -368,6 +393,9 @@ function Row({stateCode, data, regionHighlighted, setRegionHighlighted}) {
 }
 
 const isEqual = (prevProps, currProps) => {
+  if (!equal(prevProps.timelineIndex, currProps.timelineIndex)) {
+    return false;
+  }
   if (!equal(prevProps.data.last_updated, currProps.data.last_updated)) {
     return false;
   } else if (

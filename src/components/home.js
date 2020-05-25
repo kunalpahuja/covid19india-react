@@ -1,57 +1,40 @@
 import Footer from './footer';
+import useTimeseries from './hooks/usetimeseries';
 import Level from './level';
-import MapExplorer from './mapexplorer';
+// import MapExplorer from './mapexplorer';
 import Minigraph from './minigraph';
 import Search from './search';
 import Table from './table';
 import TimeSeriesExplorer from './timeseriesexplorer';
 import Updates from './updates';
 
-import {INITIAL_DATA} from '../constants';
+import {useData} from '../store';
 
 import axios from 'axios';
+import {format} from 'date-fns';
 import React, {useState, useMemo} from 'react';
 import * as Icon from 'react-feather';
 import {Helmet} from 'react-helmet';
 import {useEffectOnce, useLocalStorage} from 'react-use';
-import useSWR from 'swr';
-
-const fetcher = (url) => axios(url).then((response) => response.data);
 
 function Home(props) {
   const [regionHighlighted, setRegionHighlighted] = useState({
     stateCode: 'TT',
     districtName: null,
   });
+
   const [showUpdates, setShowUpdates] = useState(false);
   const [anchor, setAnchor] = useState(null);
-  const [mapStatistic, setMapStatistic] = useState('confirmed');
+  // const [mapStatistic, setMapStatistic] = useState('confirmed');
 
   const [lastViewedLog, setLastViewedLog] = useLocalStorage(
     'lastViewedLog',
     null
   );
   const [newUpdate, setNewUpdate] = useLocalStorage('newUpdate', false);
+  const [data] = useData();
 
-  const {data} = useSWR('http://localhost:3001/db', fetcher, {
-    suspense: true,
-    refreshInterval: 100000,
-    revalidateOnFocus: false,
-  });
-
-  // const {data} = useSWR(
-  //   'https://api.covid19india.org/v2/data.min.json',
-  //   fetcher,
-  //   {
-  //     initialData: INITIAL_DATA,
-  //     suspense: true,
-  //     revalidateOnFocus: false,
-  //     refreshInterval: 5 * 60 * 1000,
-  //     compare: (dataA, dataB) => {
-  //       return dataA['TT'].last_updated - dataB['TT'].last_updated;
-  //     },
-  //   }
-  // );
+  const [timelineIndex, setTimelineIndex] = useState(1);
 
   const Bell = useMemo(
     () => (
@@ -94,6 +77,10 @@ function Home(props) {
       });
   });
 
+  const [statistics, getStatistic] = useTimeseries();
+
+  console.log(statistics);
+
   return (
     <React.Fragment>
       <div className="Home">
@@ -123,13 +110,33 @@ function Home(props) {
 
           {showUpdates && <Updates />}
 
-          <Level data={data['TT']} />
-          <Minigraph timeseries={data['TT'].timeseries} />
-          <Table {...{data, regionHighlighted, setRegionHighlighted}} />
+          <Level data={data['TT']} {...{timelineIndex}} />
+          <Minigraph timeseries={data['TT'].timeseries} {...{timelineIndex}} />
+          <Table
+            {...{data, regionHighlighted, setRegionHighlighted, timelineIndex}}
+          />
+        </div>
+
+        <div className="timeline">
+          {Object.keys(data['TT'].timeseries).map((date, index) => (
+            <div
+              key={date}
+              style={{
+                color: timelineIndex === index ? '#6c757d' : '',
+                fontSize: timelineIndex === index ? '2rem' : '',
+              }}
+              className="date"
+              onClick={() => {
+                setTimelineIndex(index);
+              }}
+            >
+              {format(new Date(date), 'dd MMM')}
+            </div>
+          ))}
         </div>
 
         <div className="home-right">
-          <MapExplorer
+          {/* <MapExplorer
             mapName={'India'}
             data={data}
             regionHighlighted={regionHighlighted}
@@ -138,12 +145,12 @@ function Home(props) {
             setAnchor={setAnchor}
             mapStatistic={mapStatistic}
             setMapStatistic={setMapStatistic}
-          />
+          />*/}
 
           <TimeSeriesExplorer
             timeseries={data[regionHighlighted.stateCode].timeseries}
             activeStateCode={regionHighlighted.stateCode}
-            {...{regionHighlighted, setRegionHighlighted}}
+            {...{regionHighlighted, setRegionHighlighted, timelineIndex}}
             anchor={anchor}
             setAnchor={setAnchor}
           />

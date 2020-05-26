@@ -1,4 +1,4 @@
-import useTimeseries from './hooks/usetimeseries';
+import useStatistic from './hooks/usestatistic';
 
 import {TIMESERIES_STATISTICS} from '../constants';
 import {
@@ -14,18 +14,21 @@ import equal from 'fast-deep-equal';
 import React, {useState, useEffect, useRef} from 'react';
 import {useTranslation} from 'react-i18next';
 
-function TimeSeries({timeseries, chartType, isUniform, isLog, timelineIndex}) {
+function TimeSeries({
+  stateCode,
+  timeseries,
+  chartType,
+  isUniform,
+  isLog,
+  timelineIndex,
+}) {
   const {t} = useTranslation();
   const refs = useRef([]);
 
   const wrapperRef = useRef();
   const dimensions = useResizeObserver(wrapperRef);
 
-  const [statistics, dates, getDailyStatistic] = useTimeseries(
-    timeseries,
-    chartType,
-    timelineIndex
-  );
+  const [statistics, dates] = useStatistic(stateCode, timelineIndex);
 
   const [highlightedDate, setHighlightedDate] = useState(
     dates[dates.length - 1]
@@ -298,7 +301,15 @@ function TimeSeries({timeseries, chartType, isUniform, isLog, timelineIndex}) {
         .on('mouseout', mouseout)
         .on('touchend', mouseout);
     });
-  }, [chartType, dimensions, isUniform, isLog, dates, statistics]);
+  }, [
+    timelineIndex,
+    chartType,
+    dimensions,
+    isUniform,
+    isLog,
+    dates,
+    statistics,
+  ]);
 
   return (
     <React.Fragment>
@@ -314,9 +325,9 @@ function TimeSeries({timeseries, chartType, isUniform, isLog, timelineIndex}) {
               <h5 className="">{`${highlightedDate}`}</h5>
               <div className="stats-bottom">
                 <h2>
-                  {formatNumber(
-                    getDailyStatistic(highlightedDate, statistic, chartType)
-                  )}
+                  {/* formatNumber(
+                    getStatistic(highlightedDate, statistic, chartType)
+                  )*/}
                 </h2>
                 <h6></h6>
               </div>
@@ -340,9 +351,6 @@ function TimeSeries({timeseries, chartType, isUniform, isLog, timelineIndex}) {
 
 const isEqual = (prevProps, currProps) => {
   if (!equal(currProps.timelineIndex, prevProps.timelineIndex)) {
-    return false;
-  }
-  if (!equal(currProps.dates.length, prevProps.dates.length)) {
     return false;
   }
   if (!equal(currProps.chartType, prevProps.chartType)) {

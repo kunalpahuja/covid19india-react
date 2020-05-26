@@ -1,3 +1,4 @@
+import useStatistic from './hooks/usestatistic';
 import {PRIMARY_STATISTICS, STATE_CODES} from '../constants';
 import {formatNumber, capitalize, abbreviate} from '../utils/commonfunctions';
 import useTimeseries from './hooks/usetimeseries';
@@ -22,24 +23,14 @@ import {createBreakpoint, useLocalStorage} from 'react-use';
 
 const useBreakpoint = createBreakpoint({L: 768, S: 350});
 
-function PureCell({statistic, data, timelineIndex}) {
-  const [, dates, getDailyStatistic] = useTimeseries(
-    data.timeseries,
-    'cumulative',
+function PureCell({statistic, stateCode, timelineIndex}) {
+  const [statistics, dates, getStatistic] = useStatistic(
+    stateCode,
     timelineIndex
   );
 
-  const total = getDailyStatistic(
-    dates[dates.length - 1],
-    statistic,
-    'cumulative'
-  );
-
-  const delta = getDailyStatistic(
-    dates[dates.length - 1],
-    statistic,
-    'discrete'
-  );
+  const total = getStatistic(statistic, 'cumulative');
+  const delta = getStatistic(statistic, 'discrete');
 
   const spring = useSpring({
     total: total || '-',
@@ -82,12 +73,6 @@ function PureCell({statistic, data, timelineIndex}) {
 
 const isCellEqual = (prevProps, currProps) => {
   if (!equal(prevProps.timelineIndex, currProps.timelineIndex)) {
-    return false;
-  }
-  if (!equal(prevProps.data.total, currProps.data.total)) {
-    return false;
-  }
-  if (!equal(prevProps.data.delta, currProps.data.delta)) {
     return false;
   }
   return true;
@@ -309,7 +294,7 @@ function Row({
         </td>
 
         {PRIMARY_STATISTICS.map((statistic) => (
-          <Cell key={statistic} {...{data, statistic, timelineIndex}} />
+          <Cell key={statistic} {...{stateCode, statistic, timelineIndex}} />
         ))}
       </tr>
 

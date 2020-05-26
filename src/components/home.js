@@ -1,5 +1,6 @@
 import Footer from './footer';
 import useTimeseries from './hooks/usetimeseries';
+import useStatistic from './hooks/usestatistic';
 import Level from './level';
 // import MapExplorer from './mapexplorer';
 import Minigraph from './minigraph';
@@ -7,8 +8,7 @@ import Search from './search';
 import Table from './table';
 import TimeSeriesExplorer from './timeseriesexplorer';
 import Updates from './updates';
-
-import {useData} from '../store';
+import Timeline from './timeline';
 
 import axios from 'axios';
 import {format} from 'date-fns';
@@ -32,9 +32,8 @@ function Home(props) {
     null
   );
   const [newUpdate, setNewUpdate] = useLocalStorage('newUpdate', false);
-  const [data] = useData();
 
-  const [timelineIndex, setTimelineIndex] = useState(1);
+  const [timelineIndex, setTimelineIndex] = useState(0);
 
   const Bell = useMemo(
     () => (
@@ -77,10 +76,6 @@ function Home(props) {
       });
   });
 
-  const [statistics, getStatistic] = useTimeseries();
-
-  console.log(statistics);
-
   return (
     <React.Fragment>
       <div className="Home">
@@ -94,9 +89,9 @@ function Home(props) {
 
         <div className="home-left">
           <div className="header">
-            <Search districtZones={null} />
+            <Search />
 
-            <div className="actions">
+            {/* <div className="actions">
               <h5>{data['TT'].last_updated}</h5>
               {!showUpdates && (
                 <div className="bell-icon">
@@ -105,35 +100,19 @@ function Home(props) {
                 </div>
               )}
               {showUpdates && BellOff}
-            </div>
+            </div>*/}
           </div>
 
           {showUpdates && <Updates />}
 
-          <Level data={data['TT']} {...{timelineIndex}} />
-          <Minigraph timeseries={data['TT'].timeseries} {...{timelineIndex}} />
+          <Level {...{timelineIndex}} />
+          <Minigraph {...{timelineIndex}} />
           <Table
-            {...{data, regionHighlighted, setRegionHighlighted, timelineIndex}}
+            {...{regionHighlighted, setRegionHighlighted, timelineIndex}}
           />
         </div>
 
-        <div className="timeline">
-          {Object.keys(data['TT'].timeseries).map((date, index) => (
-            <div
-              key={date}
-              style={{
-                color: timelineIndex === index ? '#6c757d' : '',
-                fontSize: timelineIndex === index ? '2rem' : '',
-              }}
-              className="date"
-              onClick={() => {
-                setTimelineIndex(index);
-              }}
-            >
-              {format(new Date(date), 'dd MMM')}
-            </div>
-          ))}
-        </div>
+        <Timeline {...{timelineIndex, setTimelineIndex}} />
 
         <div className="home-right">
           {/* <MapExplorer
@@ -148,9 +127,8 @@ function Home(props) {
           />*/}
 
           <TimeSeriesExplorer
-            timeseries={data[regionHighlighted.stateCode].timeseries}
-            activeStateCode={regionHighlighted.stateCode}
-            {...{regionHighlighted, setRegionHighlighted, timelineIndex}}
+            stateCode={regionHighlighted.stateCode}
+            {...{timelineIndex}}
             anchor={anchor}
             setAnchor={setAnchor}
           />

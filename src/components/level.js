@@ -1,4 +1,4 @@
-import useTimeseries from './hooks/usetimeseries';
+import useStatistic from './hooks/usestatistic';
 
 import {PRIMARY_STATISTICS} from '../constants';
 import {formatNumber, capitalize} from '../utils/commonfunctions';
@@ -50,21 +50,17 @@ function PureLevelItem({statistic, total, delta}) {
 
 const LevelItem = React.memo(PureLevelItem);
 
-function Level({data, timelineIndex}) {
-  const [, dates, getStatistic] = useTimeseries(
-    data.timeseries,
-    'cumulative',
-    timelineIndex
-  );
+function Level({timelineIndex}) {
+  const [, , getStatistic] = useStatistic('TT', timelineIndex);
 
   return (
     <div className="Level">
       {PRIMARY_STATISTICS.map((statistic) => (
         <LevelItem
           key={statistic}
-          statistic={statistic}
-          total={getStatistic(dates[dates.length - 1], statistic, 'cumulative')}
-          delta={getStatistic(dates[dates.length - 1], statistic, 'discrete')}
+          {...{statistic}}
+          total={getStatistic(statistic, 'cumulative')}
+          delta={getStatistic(statistic, 'discrete')}
         />
       ))}
     </div>
@@ -73,9 +69,6 @@ function Level({data, timelineIndex}) {
 
 const isEqual = (prevProps, currProps) => {
   if (!equal(prevProps.timelineIndex, currProps.timelineIndex)) {
-    return false;
-  }
-  if (!equal(prevProps.data.last_updated, currProps.data.last_updated)) {
     return false;
   }
   return true;

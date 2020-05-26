@@ -1,4 +1,5 @@
 import Navbar from './components/navbar';
+import {useData} from './store';
 import ScrollToTop from './utils/ScrollToTop';
 
 import React, {Suspense, lazy} from 'react';
@@ -43,6 +44,7 @@ const schemaMarkup = {
 
 function App() {
   const {t} = useTranslation();
+  const [,] = useData();
 
   const pages = [
     {

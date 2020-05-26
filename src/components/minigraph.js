@@ -1,36 +1,22 @@
+import useStatistic from './hooks/usestatistic';
+
 import {COLORS, PRIMARY_STATISTICS} from '../constants';
 
 import classnames from 'classnames';
 import * as d3 from 'd3';
 import equal from 'fast-deep-equal';
-import produce from 'immer';
-import React, {useEffect, useRef, useMemo} from 'react';
-import useTimeseries from './hooks/usetimeseries';
+import React, {useEffect, useRef} from 'react';
 
-function Minigraph({timeseries, timelineIndex}) {
+function Minigraph({timelineIndex}) {
   const refs = useRef([]);
-
-  const [statistics, rawDates, getStatistic] = useTimeseries(
-    timeseries,
-    'cumulative',
+  const [statistics, rawDates, getStatistic] = useStatistic(
+    'TT',
     timelineIndex
   );
 
-  const dates = useMemo(() => {
-    return rawDates.slice(-20);
-  }, [rawDates]);
-
-  dates.forEach((date) => {
-    timeseries = produce(timeseries, (draftTimeseries) => {
-      draftTimeseries[date].active =
-        draftTimeseries[date].confirmed -
-        draftTimeseries[date].recovered -
-        draftTimeseries[date].deceased;
-    });
-  });
+  const dates = rawDates.slice(-20);
 
   useEffect(() => {
-    if (!timeseries) return;
     const margin = {top: 10, right: 5, bottom: 20, left: 5};
     const chartRight = 100 - margin.right;
     const chartBottom = 100 - margin.bottom;
@@ -47,7 +33,11 @@ function Minigraph({timeseries, timelineIndex}) {
       .range([margin.left, chartRight]);
 
     const dailyMin = d3.min(statistics.discrete.active);
-    const dailyMax = d3.max(statistics.discrete.confirmed);
+    const dailyMax = d3.max([
+      ...statistics.discrete.confirmed,
+      ...statistics.discrete.recovered,
+      ...statistics.discrete.deceased,
+    ]);
 
     console.log(dailyMax);
 
@@ -78,8 +68,8 @@ function Minigraph({timeseries, timelineIndex}) {
                 d3
                   .line()
                   .x((date) => xScale(new Date(date)))
-                  .y((date) =>
-                    yScale(getStatistic(date, statistic, 'discrete'))
+                  .y((date, index) =>
+                    yScale(statistics.discrete[statistic][index])
                   )
                   .curve(d3.curveMonotoneX)
               )
@@ -106,8 +96,8 @@ function Minigraph({timeseries, timelineIndex}) {
                 d3
                   .line()
                   .x((date) => xScale(new Date(date)))
-                  .y((date) =>
-                    yScale(getStatistic(date, statistic, 'discrete'))
+                  .y((date, index) =>
+                    yScale(statistics.discrete[statistic][index])
                   )
                   .curve(d3.curveMonotoneX)
               )
@@ -123,8 +113,8 @@ function Minigraph({timeseries, timelineIndex}) {
               .attr('fill', color)
               .attr('r', 2.5)
               .attr('cx', (date) => xScale(new Date(date)))
-              .attr('cy', (date) =>
-                yScale(getStatistic(date, statistic, 'discrete'))
+              .attr('cy', (date, index) =>
+                yScale(statistics.discrete[statistic][index])
               )
               .style('opacity', 0)
               .call((enter) =>
@@ -134,8 +124,8 @@ function Minigraph({timeseries, timelineIndex}) {
                   .duration(500)
                   .style('opacity', 1)
                   .attr('cx', (date) => xScale(new Date(date)))
-                  .attr('cy', (date) =>
-                    yScale(getStatistic(date, statistic, 'discrete'))
+                  .attr('cy', (date, index) =>
+                    yScale(statistics.discrete[statistic][index])
                   )
               ),
           (update) =>
@@ -143,12 +133,12 @@ function Minigraph({timeseries, timelineIndex}) {
               .transition()
               .duration(500)
               .attr('cx', (date) => xScale(new Date(date)))
-              .attr('cy', (date) =>
-                yScale(getStatistic(date, statistic, 'discrete'))
+              .attr('cy', (date, index) =>
+                yScale(statistics.discrete[statistic][index])
               )
         );
     });
-  }, [dates, timeseries, statistics, getStatistic]);
+  }, [dates, statistics, getStatistic, timelineIndex]);
 
   return (
     <div className="Minigraph">

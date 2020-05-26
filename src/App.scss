@@ -4454,8 +4454,9 @@ footer {
   overflow-y: scroll;
   height: 100vh;
   display: flex;
-  flex-direction: column-reverse;
+  flex-direction: column;
   transition: all 0.5s ease-in-out;
+  z-index: 999;
 
   .date {
     text-align: right;

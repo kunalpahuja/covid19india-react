@@ -11,17 +11,7 @@ import {createBreakpoint, useLocalStorage} from 'react-use';
 
 const useBreakpoint = createBreakpoint({XL: 1280, L: 768, S: 350});
 
-function TimeSeriesExplorer({
-  timeseries,
-  activeStateCode,
-  onHighlightState,
-  regionHighlighted,
-  setRegionHighlighted,
-  states,
-  anchor,
-  setAnchor,
-  timelineIndex,
-}) {
+function TimeSeriesExplorer({stateCode, anchor, setAnchor, timelineIndex}) {
   const {t} = useTranslation();
   // const breakpoint = useBreakpoint();
   const [lastDaysCount, setLastDaysCount] = useState(30);
@@ -113,7 +103,7 @@ function TimeSeriesExplorer({
           </div>
         </div>
 
-        {states && (
+        {/* states && (
           <div className="trends-state-name">
             <select
               value={activeStateCode}
@@ -137,13 +127,11 @@ function TimeSeriesExplorer({
               })}
             </select>
           </div>
-        )}
+        )*/}
       </div>
 
       <TimeSeries
-        {...{timeseries, chartType, isUniform, isLog, timelineIndex}}
-        dates={Object.keys(timeseries).slice(-lastDaysCount)}
-        stateCode={activeStateCode}
+        {...{stateCode, chartType, isUniform, isLog, timelineIndex}}
       />
 
       <div className="pills">
@@ -183,10 +171,10 @@ function TimeSeriesExplorer({
 }
 
 const isEqual = (prevProps, currProps) => {
-  if (!equal(currProps.timeline, prevProps.activeStateCode)) {
+  if (!equal(currProps.timelineIndex, prevProps.timelineIndex)) {
     return false;
   }
-  if (!equal(currProps.activeStateCode, prevProps.activeStateCode)) {
+  if (!equal(currProps.stateCode, prevProps.stateCode)) {
     return false;
   }
   if (!equal(currProps.anchor, prevProps.anchor)) {

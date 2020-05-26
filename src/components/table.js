@@ -1,3 +1,4 @@
+import useStatistic from './hooks/usestatistic';
 import Row from './row';
 
 import {PRIMARY_STATISTICS} from '../constants';
@@ -7,10 +8,11 @@ import {TriangleUpIcon, TriangleDownIcon} from '@primer/octicons-v2-react';
 import classnames from 'classnames';
 import equal from 'fast-deep-equal';
 import produce from 'immer';
-import React, {useMemo, useCallback} from 'react';
+import React, {useCallback} from 'react';
 import {useTranslation} from 'react-i18next';
 import {Link} from 'react-router-dom';
 import {createBreakpoint, useLocalStorage} from 'react-use';
+import {useStore} from '../store';
 
 const useBreakpoint = createBreakpoint({XL: 1280, L: 768, S: 350});
 
@@ -84,29 +86,15 @@ const FineprintBottom = React.memo(PureFineprintBottom, () => {
   return true;
 });
 
-function Table({
-  data: original,
-  regionHighlighted,
-  setRegionHighlighted,
-  timelineIndex,
-}) {
+function Table({regionHighlighted, setRegionHighlighted, timelineIndex}) {
   const {t} = useTranslation();
+
+  const {data} = useStore();
 
   const [sortData, setSortData] = useLocalStorage('sortData', {
     sortColumn: 'confirmed',
     isAscending: false,
   });
-
-  const data = useMemo(() => {
-    return produce(original, (draftState) => {
-      Object.keys(draftState).map((stateCode) => {
-        draftState[stateCode].total['active'] =
-          draftState[stateCode].total.confirmed -
-          draftState[stateCode].total.recovered -
-          draftState[stateCode].total.deceased;
-      });
-    });
-  }, [original]);
 
   const handleSortClick = useCallback(
     (statistic) => {
@@ -123,8 +111,14 @@ function Table({
   const sortingFunction = useCallback(
     (stateCodeA, stateCodeB) => {
       if (sortData.sortColumn !== 'stateName') {
-        const statisticA = data[stateCodeA].total[sortData.sortColumn] || 0;
-        const statisticB = data[stateCodeB].total[sortData.sortColumn] || 0;
+        const statisticA =
+          data[stateCodeA].statistics.cumulative[sortData.sortColumn]
+            .slice()
+            .reverse()[timelineIndex] || 0;
+        const statisticB =
+          data[stateCodeB].statistics.cumulative[sortData.sortColumn]
+            .slice()
+            .reverse()[timelineIndex] || 0;
         return sortData.isAscending
           ? statisticA - statisticB
           : statisticB - statisticA;
@@ -134,7 +128,7 @@ function Table({
           : stateCodeB.localeCompare(stateCodeA);
       }
     },
-    [sortData, data]
+    [sortData, timelineIndex, data]
   );
 
   return (
@@ -220,10 +214,6 @@ const isEqual = (prevProps, currProps) => {
       prevProps.regionHighlighted.stateCode,
       currProps.regionHighlighted.stateCode
     )
-  ) {
-    return false;
-  } else if (
-    !equal(prevProps.data['TT'].last_updated, currProps.data['TT'].last_updated)
   ) {
     return false;
   } else if (!equal(prevProps.timelineIndex, currProps.timelineIndex)) {

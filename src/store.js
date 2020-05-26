@@ -1,5 +1,6 @@
+import useTimeseries from './components/hooks/usetimeseries';
+import {INITIAL_DATA} from './constants';
 import {fetcher} from './utils/commonfunctions';
-// import {INITIAL_DATA} from './constants';
 
 import React, {createContext, useContext, useReducer, useEffect} from 'react';
 import useSWR from 'swr';
@@ -17,10 +18,10 @@ const reducer = (state, action) => {
 };
 
 export const StoreProvider = ({children}) => {
-  const [state, dispatch] = useReducer(reducer, {});
+  const [data, dispatch] = useReducer(reducer, INITIAL_DATA);
 
   return (
-    <StoreContext.Provider value={{state, dispatch}}>
+    <StoreContext.Provider value={{data, dispatch}}>
       {children}
     </StoreContext.Provider>
   );
@@ -29,17 +30,19 @@ export const StoreProvider = ({children}) => {
 export const useStore = () => useContext(StoreContext);
 
 export const useData = () => {
-  const {dispatch} = useStore();
+  const {data, dispatch} = useStore();
 
-  const {data} = useSWR('http://localhost:3001/db', fetcher, {
+  const {data: swrData} = useSWR('http://localhost:3001/db', fetcher, {
     suspense: true,
     refreshInterval: 100000,
     revalidateOnFocus: false,
   });
 
+  const [parsedData] = useTimeseries(swrData);
+
   useEffect(() => {
-    dispatch({type: 'update', data: data});
-  }, [data, dispatch]);
+    dispatch({type: 'update', data: parsedData});
+  }, [dispatch, parsedData]);
 
   return [data];
 };

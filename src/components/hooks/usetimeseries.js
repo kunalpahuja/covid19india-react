@@ -1,11 +1,24 @@
 import {TIMESERIES_STATISTICS} from '../../constants';
-import {useStore} from '../../store';
 
 import produce from 'immer';
-import {useMemo, useCallback} from 'react';
 
-function useTimeseries(timeseries, chartType = 'cumulative', timelineIndex) {
-  const {data, dispatch} = useStore();
+const useTimeseries = (data) => {
+  const getStatistic = (timeseries, date, statistic) => {
+    switch (statistic) {
+      case 'active':
+        return (
+          timeseries[date].confirmed -
+          timeseries[date].recovered -
+          timeseries[date].deceased
+        );
+
+      case 'tested':
+        return timeseries[date].tested?.samples || 0;
+
+      default:
+        return timeseries[date][statistic];
+    }
+  };
 
   const getCumulativeStatisticArray = (discreteStatisticArray) => {
     return discreteStatisticArray.reduce(function (r, discreteStatisticArray) {
@@ -14,93 +27,44 @@ function useTimeseries(timeseries, chartType = 'cumulative', timelineIndex) {
     }, []);
   };
 
-  const getStatistic = useCallback(
-    (highlightedDate, statistic, chartType) => {
-      switch (chartType) {
-        case 'cumulative':
-          const index = Object.keys(timeseries).findIndex(
-            (date) => date === highlightedDate
-          );
+  const getDiscreteStatisticArray = (timeseries, statistic) => {
+    let array = [];
+    Object.keys(timeseries).map(
+      (date) => (array = [...array, getStatistic(timeseries, date, statistic)])
+    );
+    return array;
+  };
 
-          switch (statistic) {
-            case 'active':
-              return (
-                statistics[chartType].confirmed[index] -
-                statistics[chartType].recovered[index] -
-                statistics[chartType].deceased[index]
-              );
+  Object.keys(data).forEach((stateCode) => {
+    data[stateCode] = produce(data[stateCode], (draftState) => {
+      draftState['statistics'] = produce(
+        draftState['statistics'] || {cumulative: null, discrete: null},
+        (draftStatistics) => {
+          ['discrete', 'cumulative'].map((type) => {
+            draftStatistics[type] = produce(
+              draftStatistics[type] || {},
+              (draftStatistic) => {
+                TIMESERIES_STATISTICS.map((statistic) => {
+                  if (type === 'discrete') {
+                    draftStatistic[statistic] = getDiscreteStatisticArray(
+                      data[stateCode].timeseries,
+                      statistic
+                    );
+                  } else if (type === 'cumulative') {
+                    draftStatistic[statistic] = getCumulativeStatisticArray(
+                      draftStatistics['discrete'][statistic]
+                    );
+                  }
+                });
+              }
+            );
+          });
+        }
+      );
+    });
+  });
 
-            default:
-              return statistics[chartType][statistic][index];
-          }
-
-        default:
-          switch (statistic) {
-            case 'active':
-              return (
-                timeseries[highlightedDate].confirmed -
-                timeseries[highlightedDate].recovered -
-                timeseries[highlightedDate].deceased
-              );
-
-            case 'tested':
-              return timeseries[highlightedDate].tested?.samples || 0;
-
-            default:
-              return timeseries[highlightedDate][statistic];
-          }
-      }
-    },
-    // eslint-disable-next-line
-    [timeseries]
-  );
-
-  const statistics = useMemo(
-    (prevStatistics) => {
-      const getDiscreteStatisticArray = (statistic) => {
-        let array = [];
-        Object.keys(timeseries).map(
-          (date) => (array = [...array, getStatistic(date, statistic)])
-        );
-        return array;
-      };
-
-      prevStatistics = produce(prevStatistics || {}, (draftStatistics) => {
-        TIMESERIES_STATISTICS.map((statistic) => {
-          switch (chartType) {
-            case 'cumulative':
-              draftStatistics['cumulative'] = produce(
-                draftStatistics['cumulative'] || {},
-                (draftCumulative) => {
-                  draftCumulative[statistic] = getCumulativeStatisticArray(
-                    getDiscreteStatisticArray(statistic)
-                  );
-                }
-              );
-
-            case 'discrete':
-              draftStatistics['discrete'] = produce(
-                draftStatistics['discrete'] || {},
-                (draftDiscrete) => {
-                  draftDiscrete[statistic] = getDiscreteStatisticArray(
-                    statistic
-                  );
-                }
-              );
-          }
-        });
-      });
-
-      return prevStatistics;
-    },
-    [chartType, getStatistic, timeseries]
-  );
-
-  return [
-    statistics,
-    Object.keys(timeseries).slice(0, timelineIndex + 1),
-    getStatistic,
-  ];
-}
+  return [data];
+};
 
 export default useTimeseries;

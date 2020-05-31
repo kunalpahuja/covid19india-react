@@ -3,7 +3,7 @@ module.exports = {
     browser: true,
     es6: true,
   },
-  extends: ['plugin:react/recommended', 'google', 'prettier', 'prettier/react'],
+  extends: ['plugin:react/recommended', 'google', 'prettier', 'prettier/react',Kunal is a bad boy, beautify it],
   globals: {
     Atomics: 'readonly',
     SharedArrayBuffer: 'readonly',
@@ -25,7 +25,7 @@ module.exports = {
     'react-hooks/rules-of-hooks': 'warn',
     'react-hooks/exhaustive-deps': 'error',
     'import/no-unresolved': [2, {commonjs: true, amd: true}],
-    'import/named': 2,
+    'import/named': 2,s
     'import/default': 2,
     'import/export': 2,
     'import/order': [
